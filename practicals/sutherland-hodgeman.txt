@@ -1,0 +1,81 @@
+import matplotlib.pyplot as plt
+
+# Define the clipping window
+x_min, y_min = 10, 10
+x_max, y_max = 200, 150
+
+# Function to clip a polygon against a single edge
+def clip_polygon(polygon, edge_start, edge_end):
+    def inside(p):
+        return (edge_end[0] - edge_start[0]) * (p[1] - edge_start[1]) > (edge_end[1] - edge_start[1]) * (p[0] - edge_start[0])
+    
+    def intersection(s, p):
+        dx1, dy1 = edge_end[0] - edge_start[0], edge_end[1] - edge_start[1]
+        dx2, dy2 = s[0] - p[0], s[1] - p[1]
+        denom = dx1 * dy2 - dy1 * dx2
+        if denom == 0:
+            return p
+        t = ((edge_start[0] - p[0]) * dy2 + (p[1] - edge_start[1]) * dx2) / denom
+        return [edge_start[0] + t * dx1, edge_start[1] + t * dy1]
+    
+    clipped_polygon = []
+    n = len(polygon)
+    
+    for i in range(n):
+        s = polygon[i - 1]
+        p = polygon[i]
+        
+        if inside(p):
+            if not inside(s):
+                clipped_polygon.append(intersection(s, p))
+            clipped_polygon.append(p)
+        elif inside(s):
+            clipped_polygon.append(intersection(s, p))
+    
+    return clipped_polygon
+
+# Function to clip a polygon against all four edges of the clipping window
+def sutherland_hodgman_clip(polygon):
+    # Define the edges of the clipping window
+    edges = [
+        ([x_min, y_min], [x_max, y_min]),  # Bottom edge
+        ([x_max, y_min], [x_max, y_max]),  # Right edge
+        ([x_max, y_max], [x_min, y_max]),  # Top edge
+        ([x_min, y_max], [x_min, y_min])   # Left edge
+    ]
+    
+    clipped_polygon = polygon
+    for edge_start, edge_end in edges:
+        clipped_polygon = clip_polygon(clipped_polygon, edge_start, edge_end)
+    
+    return clipped_polygon
+
+# Example usage
+polygon = [[50, 50], [150, 50], [150, 200], [50, 200]]
+clipped_polygon = sutherland_hodgman_clip(polygon)
+
+# Plotting the original and clipped polygons and the clipping window
+fig, ax = plt.subplots()
+
+# Original polygon
+original_polygon = plt.Polygon(polygon, closed=True, fill=None, edgecolor='r', linestyle='--', label='Original Polygon')
+ax.add_patch(original_polygon)
+
+# Clipped polygon
+if clipped_polygon:
+    clipped_polygon = plt.Polygon(clipped_polygon, closed=True, fill=None, edgecolor='g', label='Clipped Polygon')
+    ax.add_patch(clipped_polygon)
+
+# Clipping window
+rect = plt.Rectangle((x_min, y_min), x_max - x_min, y_max - y_min, edgecolor='b', facecolor='none', label='Clipping Window')
+ax.add_patch(rect)
+
+plt.xlim(0, 250)
+plt.ylim(0, 250)
+plt.xlabel('X')
+plt.ylabel('Y')
+plt.title('Sutherland-Hodgman Polygon Clipping Algorithm')
+plt.legend()
+plt.grid(True)
+plt.gca().set_aspect('equal', adjustable='box')
+plt.show()

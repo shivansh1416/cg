@@ -1,0 +1,166 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+
+def translate(points, tx, ty, tz):
+    transformation_matrix = np.array([
+        [1, 0, 0, tx],
+        [0, 1, 0, ty],
+        [0, 0, 1, tz],
+        [0, 0, 0, 1]
+    ])
+    return np.dot(transformation_matrix, points)
+
+def scale(points, sx, sy, sz):
+    transformation_matrix = np.array([
+        [sx, 0, 0, 0],
+        [0, sy, 0, 0],
+        [0, 0, sz, 0],
+        [0, 0, 0, 1]
+    ])
+    return np.dot(transformation_matrix, points)
+
+def rotate_x(points, angle):
+    rad = np.deg2rad(angle)
+    transformation_matrix = np.array([
+        [1, 0, 0, 0],
+        [0, np.cos(rad), -np.sin(rad), 0],
+        [0, np.sin(rad), np.cos(rad), 0],
+        [0, 0, 0, 1]
+    ])
+    return np.dot(transformation_matrix, points)
+
+def rotate_y(points, angle):
+    rad = np.deg2rad(angle)
+    transformation_matrix = np.array([
+        [np.cos(rad), 0, np.sin(rad), 0],
+        [0, 1, 0, 0],
+        [np.sin(rad), 0, np.cos(rad), 0],
+        [0, 0, 0, 1]
+    ])
+    return np.dot(transformation_matrix, points)
+
+def rotate_z(points, angle):
+    rad = np.deg2rad(angle)
+    transformation_matrix = np.array([
+        [np.cos(rad), -np.sin(rad), 0, 0],
+        [np.sin(rad), np.cos(rad), 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1]
+    ])
+    return np.dot(transformation_matrix, points)
+
+def parallel_projection(points):
+    projection_matrix = np.array([
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 1]
+    ])
+    return np.dot(projection_matrix, points)
+
+def perspective_projection(points, d):
+    projection_matrix = np.array([
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 1/d, 0]
+    ])
+    projected_points = np.dot(projection_matrix, points)
+    projected_points /= projected_points[3]  # Convert from homogeneous to 3D coordinates
+    return projected_points
+
+# Define the original 3D object (a cube in this case)
+cube_vertices = np.array([
+    [1, 1, 1, 1],
+    [1, 1, -1, 1],
+    [1, -1, -1, 1],
+    [1, -1, 1, 1],
+    [-1, 1, 1, 1],
+    [-1, 1, -1, 1],
+    [-1, -1, -1, 1],
+    [-1, -1, 1, 1]
+]).T
+
+# Define the cube faces for visualization
+cube_faces = [
+    [0, 1, 2, 3],
+    [4, 5, 6, 7],
+    [0, 1, 5, 4],
+    [2, 3, 7, 6],
+    [0, 3, 7, 4],
+    [1, 2, 6, 5]
+]
+
+# Transformations
+tx, ty, tz = 2, 3, 4  # Translation
+sx, sy, sz = 1.5, 2, 0.5  # Scaling
+angle_x, angle_y, angle_z = 30, 45, 60  # Rotation angles
+
+# Apply transformations
+translated_cube = translate(cube_vertices, tx, ty, tz)
+scaled_cube = scale(cube_vertices, sx, sy, sz)
+rotated_cube_x = rotate_x(cube_vertices, angle_x)
+rotated_cube_y = rotate_y(cube_vertices, angle_y)
+rotated_cube_z = rotate_z(cube_vertices, angle_z)
+
+# Apply projections
+parallel_projected_cube = parallel_projection(rotated_cube_z)
+perspective_projected_cube = perspective_projection(rotated_cube_z, d=5)
+
+# Function to plot the 3D object
+def plot_3d_object(ax, vertices, faces, color='b', label='3D Object'):
+    vertices = vertices.T[:, :3]  # Convert from homogeneous to 3D coordinates
+    for face in faces:
+        poly3d = [[vertices[vert_id] for vert_id in face]]
+        ax.add_collection3d(Poly3DCollection(poly3d, facecolors=color, linewidths=1, edgecolors='r', alpha=0.25))
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    ax.set_title(label)
+    ax.auto_scale_xyz([-5, 5], [-5, 5], [-5, 5])
+
+# Function to plot the 2D projection
+def plot_2d_projection(ax, points, faces, color='b', label='2D Projection'):
+    points = points.T[:, :3]  # Convert from homogeneous to 3D coordinates
+    for face in faces:
+        face_points = points[face]
+        ax.plot(face_points[:, 0], face_points[:, 1], color)
+        ax.fill(face_points[:, 0], face_points[:, 1], color=color, alpha=0.25)
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_title(label)
+    ax.axis('equal')
+
+# Plotting the original and transformed cubes in 3D
+fig = plt.figure(figsize=(12, 8))
+
+ax1 = fig.add_subplot(231, projection='3d')
+plot_3d_object(ax1, cube_vertices, cube_faces, color='b', label='Original Cube')
+
+ax2 = fig.add_subplot(232, projection='3d')
+plot_3d_object(ax2, translated_cube, cube_faces, color='g', label='Translated Cube')
+
+ax3 = fig.add_subplot(233, projection='3d')
+plot_3d_object(ax3, scaled_cube, cube_faces, color='r', label='Scaled Cube')
+
+ax4 = fig.add_subplot(234, projection='3d')
+plot_3d_object(ax4, rotated_cube_x, cube_faces, color='c', label='Rotated Cube X')
+
+ax5 = fig.add_subplot(235, projection='3d')
+plot_3d_object(ax5, rotated_cube_y, cube_faces, color='m', label='Rotated Cube Y')
+
+ax6 = fig.add_subplot(236, projection='3d')
+plot_3d_object(ax6, rotated_cube_z, cube_faces, color='y', label='Rotated Cube Z')
+
+plt.tight_layout()
+plt.show()
+
+# Plotting the projections in 2D
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+
+plot_2d_projection(ax1, parallel_projected_cube, cube_faces, color='b', label='Parallel Projection')
+plot_2d_projection(ax2, perspective_projected_cube, cube_faces, color='r', label='Perspective Projection')
+
+plt.tight_layout()
+plt.show()

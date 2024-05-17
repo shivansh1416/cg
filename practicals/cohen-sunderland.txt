@@ -1,0 +1,103 @@
+import matplotlib.pyplot as plt
+
+# Define region codes
+INSIDE = 0  # 0000
+LEFT = 1    # 0001
+RIGHT = 2   # 0010
+BOTTOM = 4  # 0100
+TOP = 8     # 1000
+
+# Define the clipping window
+x_min, y_min = 10, 10
+x_max, y_max = 200, 150
+
+def compute_outcode(x, y):
+    code = INSIDE
+    if x < x_min:
+        code |= LEFT
+    elif x > x_max:
+        code |= RIGHT
+    if y < y_min:
+        code |= BOTTOM
+    elif y > y_max:
+        code |= TOP
+    return code
+
+def cohen_sutherland_line_clip(x0, y0, x1, y1):
+    outcode0 = compute_outcode(x0, y0)
+    outcode1 = compute_outcode(x1, y1)
+    accept = False
+
+    while True:
+        if not (outcode0 | outcode1):  # Both points inside
+            accept = True
+            break
+        elif outcode0 & outcode1:  # Both points share an outside region
+            break
+        else:
+            outcode_out = outcode0 if outcode0 != INSIDE else outcode1
+            x, y = 0, 0
+
+            if outcode_out & TOP:
+                x = x0 + (x1 - x0) * (y_max - y0) / (y1 - y0)
+                y = y_max
+            elif outcode_out & BOTTOM:
+                x = x0 + (x1 - x0) * (y_min - y0) / (y1 - y0)
+                y = y_min
+            elif outcode_out & RIGHT:
+                y = y0 + (y1 - y0) * (x_max - x0) / (x1 - x0)
+                x = x_max
+            elif outcode_out & LEFT:
+                y = y0 + (y1 - y0) * (x_min - x0) / (x1 - x0)
+                x = x_min
+
+            if outcode_out == outcode0:
+                x0, y0 = x, y
+                outcode0 = compute_outcode(x0, y0)
+            else:
+                x1, y1 = x, y
+                outcode1 = compute_outcode(x1, y1)
+
+    if accept:
+        return (x0, y0, x1, y1)
+    else:
+        return None
+
+# Example usage
+lines = [
+    (5, 5, 150, 150),
+    (50, 50, 250, 100),
+    (120, 10, 120, 250),
+    (10, 100, 250, 100),
+]
+
+clipped_lines = []
+
+for line in lines:
+    result = cohen_sutherland_line_clip(*line)
+    if result:
+        clipped_lines.append(result)
+
+# Plotting the lines and the clipping window
+fig, ax = plt.subplots()
+for line in lines:
+    x0, y0, x1, y1 = line
+    ax.plot([x0, x1], [y0, y1], 'r--', label='Original line' if line == lines[0] else "")
+
+for line in clipped_lines:
+    x0, y0, x1, y1 = line
+    ax.plot([x0, x1], [y0, y1], 'g', label='Clipped line' if line == clipped_lines[0] else "")
+
+# Draw the clipping rectangle
+rect = plt.Rectangle((x_min, y_min), x_max - x_min, y_max - y_min, edgecolor='b', facecolor='none', label='Clipping window')
+ax.add_patch(rect)
+
+plt.xlim(0, 300)
+plt.ylim(0, 300)
+plt.xlabel('X')
+plt.ylabel('Y')
+plt.title('Cohen-Sutherland Line Clipping Algorithm')
+plt.legend()
+plt.grid(True)
+plt.gca().set_aspect('equal', adjustable='box')
+plt.show()

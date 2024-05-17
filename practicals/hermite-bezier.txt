@@ -1,0 +1,61 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+def hermite_curve(P0, P1, T0, T1, num_points=100):
+    t = np.linspace(0, 1, num_points)
+    h00 = 2*t**3 - 3*t**2 + 1
+    h10 = t**3 - 2*t**2 + t
+    h01 = -2*t**3 + 3*t**2
+    h11 = t**3 - t**2
+    curve = np.outer(h00, P0) + np.outer(h10, T0) + np.outer(h01, P1) + np.outer(h11, T1)
+    return curve
+
+def bezier_curve(P0, P1, P2, P3, num_points=100):
+    t = np.linspace(0, 1, num_points)
+    P0 = np.array(P0)
+    P1 = np.array(P1)
+    P2 = np.array(P2)
+    P3 = np.array(P3)
+    curve = np.outer((1-t)**3, P0) + np.outer(3*(1-t)**2 * t, P1) + np.outer(3*(1-t) * t**2, P2) + np.outer(t**3, P3)
+    return curve
+
+# Control points for Hermite curve
+P0_hermite = np.array([0, 0])
+P1_hermite = np.array([1, 1])
+T0_hermite = np.array([1, 2])
+T1_hermite = np.array([1, 1])
+
+# Control points for Bezier curve
+P0_bezier = np.array([0, 0])
+P1_bezier = np.array([1, 2])
+P2_bezier = np.array([2, -1])
+P3_bezier = np.array([3, 3])
+
+# Generate curves
+hermite_points = hermite_curve(P0_hermite, P1_hermite, T0_hermite, T1_hermite)
+bezier_points = bezier_curve(P0_bezier, P1_bezier, P2_bezier, P3_bezier)
+
+# Plotting
+plt.figure(figsize=(12, 6))
+
+# Plot Hermite curve
+plt.subplot(1, 2, 1)
+plt.plot(hermite_points[:, 0], hermite_points[:, 1], 'b-', label='Hermite Curve')
+plt.plot([P0_hermite[0], P1_hermite[0]], [P0_hermite[1], P1_hermite[1]], 'ro-')
+plt.quiver(P0_hermite[0], P0_hermite[1], T0_hermite[0], T0_hermite[1], angles='xy', scale_units='xy', scale=1, color='r')
+plt.quiver(P1_hermite[0], P1_hermite[1], T1_hermite[0], T1_hermite[1], angles='xy', scale_units='xy', scale=1, color='r')
+plt.title('Hermite Curve')
+plt.legend()
+plt.grid()
+
+# Plot Bezier curve
+plt.subplot(1, 2, 2)
+plt.plot(bezier_points[:, 0], bezier_points[:, 1], 'g-', label='Bezier Curve')
+plt.plot([P0_bezier[0], P1_bezier[0], P2_bezier[0], P3_bezier[0]], 
+         [P0_bezier[1], P1_bezier[1], P2_bezier[1], P3_bezier[1]], 'ro-')
+plt.title('Bezier Curve')
+plt.legend()
+plt.grid()
+
+plt.tight_layout()
+plt.show()

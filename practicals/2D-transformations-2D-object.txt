@@ -1,0 +1,65 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+def translate(points, tx, ty):
+    transformation_matrix = np.array([
+        [1, 0, tx],
+        [0, 1, ty],
+        [0, 0, 1]
+    ])
+    return np.dot(transformation_matrix, points)
+
+def scale(points, sx, sy):
+    transformation_matrix = np.array([
+        [sx, 0, 0],
+        [0, sy, 0],
+        [0, 0, 1]
+    ])
+    return np.dot(transformation_matrix, points)
+
+def rotate(points, angle):
+    rad = np.deg2rad(angle)
+    transformation_matrix = np.array([
+        [np.cos(rad), -np.sin(rad), 0],
+        [np.sin(rad), np.cos(rad), 0],
+        [0, 0, 1]
+    ])
+    return np.dot(transformation_matrix, points)
+
+def plot_polygon(points, ax, label, color):
+    points = np.hstack((points, points[:, [0]]))
+    ax.plot(points[0, :], points[1, :], color=color, label=label)
+
+# Define the original polygon (a square in this case)
+polygon = np.array([
+    [1, 1, 1],
+    [1, -1, 1],
+    [-1, -1, 1],
+    [-1, 1, 1]
+]).T
+
+# Transformations
+tx, ty = 2, 3  # Translation
+sx, sy = 2, 1.5  # Scaling
+angle = 45  # Rotation in degrees
+
+# Apply transformations
+translated_polygon = translate(polygon, tx, ty)
+scaled_polygon = scale(polygon, sx, sy)
+rotated_polygon = rotate(polygon, angle)
+
+# Plotting the original and transformed polygons
+fig, ax = plt.subplots()
+
+plot_polygon(polygon, ax, 'Original Polygon', 'r')
+plot_polygon(translated_polygon, ax, 'Translated Polygon', 'g')
+plot_polygon(scaled_polygon, ax, 'Scaled Polygon', 'b')
+plot_polygon(rotated_polygon, ax, 'Rotated Polygon', 'm')
+
+ax.legend()
+plt.xlabel('X')
+plt.ylabel('Y')
+plt.title('2D Transformations using Homogeneous Coordinates')
+plt.grid(True)
+plt.axis('equal')
+plt.show()
